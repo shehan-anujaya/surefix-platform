@@ -1,0 +1,9 @@
+[submodule "config-server"]
+	path = config-server
+	url = https://github.com/shehan-anujaya/surefix-config-server.git
+[submodule "eureka-server"]
+	path = eureka-server
+	url = https://github.com/shehan-anujaya/surefix-eureka-server.git
+[submodule "api-gateway"]
+	path = api-gateway
+	url = https://github.com/shehan-anujaya/surefix-api-gateway.git
