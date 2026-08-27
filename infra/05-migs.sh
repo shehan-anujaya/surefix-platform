@@ -29,12 +29,19 @@ done
 CONFIG_URL=http://config.surefix.internal:8888
 EUREKA_URL=http://eureka.surefix.internal:8761/eureka/
 
-# name:port:kind  (platform = fixed 2 instances across zones, service = autoscaled)
+# name:port:kind
+#   platform = fixed 2 instances across zones, reachable directly (external IP) so the registry and
+#              the gateway can be demonstrated per VM
+#   service  = autoscaled, private (no external IP) - egress goes through Cloud NAT
 COMPONENTS="config-server:8888:platform eureka-server:8761:platform api-gateway:8080:platform bug-service:8081:service run-service:8082:service evidence-service:8083:service"
-TEMPLATE_VERSION=${TEMPLATE_VERSION:-v1}
+TEMPLATE_VERSION=${TEMPLATE_VERSION:-v3}
+ONLY=${ONLY:-}          # optional: limit the run to one kind (platform|service) or a single component
 
 for c in $COMPONENTS; do
   IFS=: read -r name port kind <<< "$c"
+  if [ -n "$ONLY" ] && [ "$ONLY" != "$kind" ] && [ "$ONLY" != "$name" ]; then continue; fi
+  addr=()
+  if [ "$kind" = service ]; then addr=(--no-address); fi
   envfile=$(mktemp)
   {
     echo "SPRING_PROFILES_ACTIVE=gcp"
@@ -52,7 +59,7 @@ for c in $COMPONENTS; do
   ensure gcloud compute instance-templates describe tpl-$name-$TEMPLATE_VERSION -- \
     gcloud compute instance-templates create tpl-$name-$TEMPLATE_VERSION --machine-type=e2-small \
       --image-family=surefix-base --image-project=$PROJECT_ID --boot-disk-size=10GB \
-      --network=$NETWORK --subnet=$SUBNET --region=$REGION --no-address \
+      --network=$NETWORK --subnet=$SUBNET --region=$REGION "${addr[@]}" \
       --service-account=$VM_SA_EMAIL --scopes=cloud-platform --tags=surefix,$name \
       --metadata=component=$name,artifact-bucket=$ARTIFACT_BUCKET \
       --metadata-from-file=startup-script="$(winpath "$HERE/startup.sh")",env="$(winpath "$envfile")"

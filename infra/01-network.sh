@@ -19,10 +19,17 @@ ensure gcloud compute firewall-rules describe $NETWORK-allow-health-checks -- \
   gcloud compute firewall-rules create $NETWORK-allow-health-checks --network=$NETWORK \
     --allow=tcp --source-ranges=130.211.0.0/22,35.191.0.0/16
 
-# SSH only through IAP (the VMs have no external IPs)
+# SSH only through IAP (never a public port 22)
 ensure gcloud compute firewall-rules describe $NETWORK-allow-iap-ssh -- \
   gcloud compute firewall-rules create $NETWORK-allow-iap-ssh --network=$NETWORK \
     --allow=tcp:22 --source-ranges=35.235.240.0/20
+
+# The platform VMs are directly reachable for the demo: Eureka dashboard (8761) and the gateway (8080).
+# The Config Server port (8888) is deliberately NOT opened - it serves decrypted configuration.
+ensure gcloud compute firewall-rules describe $NETWORK-allow-platform-demo -- \
+  gcloud compute firewall-rules create $NETWORK-allow-platform-demo --network=$NETWORK \
+    --allow=tcp:8080,tcp:8761 --source-ranges=0.0.0.0/0 \
+    --target-tags=eureka-server,api-gateway
 
 ensure gcloud compute routers describe surefix-router --region=$REGION -- \
   gcloud compute routers create surefix-router --network=$NETWORK --region=$REGION
