@@ -42,6 +42,8 @@ for c in $COMPONENTS; do
   if [ -n "$ONLY" ] && [ "$ONLY" != "$kind" ] && [ "$ONLY" != "$name" ]; then continue; fi
   addr=()
   if [ "$kind" = service ]; then addr=(--no-address); fi
+  size=2
+  if [ "$name" = eureka-server ]; then size=3; fi   # one registry peer per zone (DS replicas)
   envfile=$(mktemp)
   {
     echo "SPRING_PROFILES_ACTIVE=gcp"
@@ -77,7 +79,7 @@ for c in $COMPONENTS; do
     fi
   else
     gcloud compute instance-groups managed create mig-$name --region=$REGION --zones=$ZONES \
-      --template=tpl-$name-$TEMPLATE_VERSION --size=2 --health-check=hc-$name --initial-delay=300
+      --template=tpl-$name-$TEMPLATE_VERSION --size=$size --health-check=hc-$name --initial-delay=300
     gcloud compute instance-groups managed set-named-ports mig-$name --region=$REGION --named-ports=http:$port
     if [ "$kind" = service ]; then
       gcloud compute instance-groups managed set-autoscaling mig-$name --region=$REGION \
