@@ -35,6 +35,28 @@ ensure gcloud compute forwarding-rules describe surefix-http-fr --global -- \
   gcloud compute forwarding-rules create surefix-http-fr --global --address=surefix-gateway-ip \
     --target-http-proxy=surefix-http-proxy --ports=80
 
+# External Application load balancer -> Cloud Run frontend (serverless network endpoint group)
+ensure gcloud compute network-endpoint-groups describe neg-surefix-web --region=$REGION -- \
+  gcloud compute network-endpoint-groups create neg-surefix-web --region=$REGION \
+    --network-endpoint-type=serverless --cloud-run-service=surefix-web
+ensure gcloud compute backend-services describe be-surefix-web --global -- \
+  gcloud compute backend-services create be-surefix-web --global \
+    --load-balancing-scheme=EXTERNAL_MANAGED --protocol=HTTP
+gcloud compute backend-services describe be-surefix-web --global --format='value(backends)' | grep -q neg-surefix-web || \
+  gcloud compute backend-services add-backend be-surefix-web --global \
+    --network-endpoint-group=neg-surefix-web --network-endpoint-group-region=$REGION
+ensure gcloud compute url-maps describe lb-webapp -- \
+  gcloud compute url-maps create lb-webapp --default-service=be-surefix-web
+ensure gcloud compute target-http-proxies describe surefix-web-proxy -- \
+  gcloud compute target-http-proxies create surefix-web-proxy --url-map=lb-webapp
+ensure gcloud compute addresses describe surefix-web-ip --global -- \
+  gcloud compute addresses create surefix-web-ip --global --ip-version=IPV4
+ensure gcloud compute forwarding-rules describe surefix-web-fr --global -- \
+  gcloud compute forwarding-rules create surefix-web-fr --global --address=surefix-web-ip \
+    --target-http-proxy=surefix-web-proxy --ports=80 --load-balancing-scheme=EXTERNAL_MANAGED
+
 GATEWAY_IP=$(gcloud compute addresses describe surefix-gateway-ip --global --format='value(address)')
+WEB_IP=$(gcloud compute addresses describe surefix-web-ip --global --format='value(address)')
 echo "GATEWAY_URL=http://$GATEWAY_IP"
+echo "WEBAPP_URL=http://$WEB_IP"
 echo "lb done"
