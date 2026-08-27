@@ -4,7 +4,7 @@
 |---|---|
 | **Student Name** | Shehan Anujaya |
 | **Student Number** | 241711072 |
-| **Slack Handle** | — |
+| **Slack Handle** | U0BKHA1JHNC |
 | **GCP Project ID** | `surefix-eca` |
 | **Module** | ITS 2130 – Enterprise Cloud Architecture (HDSE @ IJSE) |
 
