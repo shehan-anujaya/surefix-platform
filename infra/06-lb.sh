@@ -27,13 +27,13 @@ ensure gcloud compute backend-services describe be-api-gateway --global -- \
 gcloud compute backend-services describe be-api-gateway --global --format='value(backends)' | grep -q mig-api-gateway || \
   gcloud compute backend-services add-backend be-api-gateway --global \
     --instance-group=mig-api-gateway --instance-group-region=$REGION --balancing-mode=UTILIZATION
-ensure gcloud compute url-maps describe surefix-lb -- \
-  gcloud compute url-maps create surefix-lb --default-service=be-api-gateway
-ensure gcloud compute target-http-proxies describe surefix-http-proxy -- \
-  gcloud compute target-http-proxies create surefix-http-proxy --url-map=surefix-lb
+ensure gcloud compute url-maps describe lb-api-gateway -- \
+  gcloud compute url-maps create lb-api-gateway --default-service=be-api-gateway
+ensure gcloud compute target-http-proxies describe lb-api-gateway-proxy -- \
+  gcloud compute target-http-proxies create lb-api-gateway-proxy --url-map=lb-api-gateway
 ensure gcloud compute forwarding-rules describe surefix-http-fr --global -- \
   gcloud compute forwarding-rules create surefix-http-fr --global --address=surefix-gateway-ip \
-    --target-http-proxy=surefix-http-proxy --ports=80
+    --target-http-proxy=lb-api-gateway-proxy --ports=80
 
 # External Application load balancer -> Cloud Run frontend (serverless network endpoint group)
 ensure gcloud compute network-endpoint-groups describe neg-surefix-web --region=$REGION -- \

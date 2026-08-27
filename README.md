@@ -52,6 +52,15 @@ Cloud Run (frontend + Zipkin).
 Deployment model: **backend = IaaS** (Compute Engine VMs managed by PM2, no containers),
 **frontend = PaaS/Serverless** (Cloud Run).
 
+Access model:
+
+| Layer | Public IP | Reachable as |
+|---|---|---|
+| `api-gateway`, `eureka-server` VMs | yes | `lb-api-gateway` (http://136.68.238.165) and directly per VM on 8080 / 8761 |
+| `config-server` VMs | yes (port 8888 **not** opened – it serves decrypted configuration) | `config.surefix.internal:8888` inside the VPC |
+| `bug-service`, `run-service`, `evidence-service` VMs | no | only through the gateway; egress via **Cloud NAT** |
+| Frontend | – | Cloud Run URL and `lb-webapp` (http://8.233.103.183) via a serverless NEG |
+
 ## Technology Stack
 
 - Java 25, Spring Boot 4.0.8, Spring Cloud 2025.1.3 (Config, Netflix Eureka, Gateway, LoadBalancer)
