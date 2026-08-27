@@ -56,10 +56,15 @@ Access model:
 
 | Layer | Public IP | Reachable as |
 |---|---|---|
-| `api-gateway`, `eureka-server` VMs | yes | `lb-api-gateway` (http://136.68.238.165) and directly per VM on 8080 / 8761 |
-| `config-server` VMs | yes (port 8888 **not** opened – it serves decrypted configuration) | `config.surefix.internal:8888` inside the VPC |
-| `bug-service`, `run-service`, `evidence-service` VMs | no | only through the gateway; egress via **Cloud NAT** |
+| `eureka-server` VMs | yes (port 8761) | the registry dashboard is opened per VM, one peer per zone |
+| `api-gateway` VMs | no | `lb-api-gateway` (http://136.68.238.165) |
+| `config-server` VMs | no | `config.surefix.internal:8888` inside the VPC |
+| `bug-service`, `run-service`, `evidence-service` VMs | no | only through the gateway |
 | Frontend | – | Cloud Run URL and `lb-webapp` (http://8.233.103.183) via a serverless NEG |
+
+Every VM without a public IP reaches the internet through **Cloud NAT**. Keeping public IPs to the
+registry only also keeps the regional `IN_USE_ADDRESSES` quota (8) free enough for rolling updates,
+which surge extra VMs before removing the old ones.
 
 ## Technology Stack
 

@@ -41,7 +41,8 @@ for c in $COMPONENTS; do
   IFS=: read -r name port kind <<< "$c"
   if [ -n "$ONLY" ] && [ "$ONLY" != "$kind" ] && [ "$ONLY" != "$name" ]; then continue; fi
   addr=()
-  if [ "$kind" = service ]; then addr=(--no-address); fi
+  # only the registry keeps a public IP (its dashboard is opened per VM); everything else is private
+  if [ "$name" != eureka-server ]; then addr=(--no-address); fi
   size=2
   if [ "$name" = eureka-server ]; then size=3; fi   # one registry peer per zone (DS replicas)
   envfile=$(mktemp)
